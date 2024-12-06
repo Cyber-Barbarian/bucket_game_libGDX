@@ -1,25 +1,74 @@
 package com.badlogic.drop;
 
 import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main implements ApplicationListener {
+
+    Texture backgroundTexture;
+    Texture bucketTexture;
+    Texture dropTexture;
+    Sound dropSound;
+    Music music;
+    SpriteBatch spriteBatch;
+    FitViewport viewport;
+
     @Override
     public void create() {
         // Prepare your application here.
+        backgroundTexture = new Texture("background.png");
+        bucketTexture = new Texture("bucket.png");
+        dropTexture = new Texture("drop.png");
+        dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.mp3"));
+        music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
+        spriteBatch = new SpriteBatch();
+        viewport = new FitViewport(8, 5); //8 unidades por 5 unidades
     }
 
     @Override
     public void resize(int width, int height) {
         // Resize your application here. The parameters represent the new window size.
+        viewport.update(width, height, true);
     }
 
     @Override
     public void render() {
         // Draw your application here.
+        input();
+        logic();
+        draw();
+    }
+
+    private void input() {
+
+    }
+
+    private void logic() {
+
+    }
+
+    private void draw() {
         ScreenUtils.clear(Color.BLUE);
+        viewport.apply();
+        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+        spriteBatch.begin();
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
+
+        //spriteBatch.draw(textura, posiçãox, posiçãoy, largura altura)
+        spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
+        spriteBatch.draw(bucketTexture, 0,0,1,1);
+
+        spriteBatch.end();
+
     }
 
     @Override
