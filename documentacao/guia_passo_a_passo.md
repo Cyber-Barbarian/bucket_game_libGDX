@@ -210,3 +210,182 @@ private void input() {
 }
 
 ```
+# 5 - Lógica do jogo
+
+## Limites
+- um ponto precisa ser ajustado em nosso jogo: nosso personagem consegue sair do limite da tela e voltar
+- Para resolver isso, precisamos criar uma nova variável chamada `worldWidth` e `worldHeight` para controlar o tamanho do background na janela
+- Vamos criar também `bucketWidth` e `bucketHeight` para controlar o tamanho do personagem
+- com o método MathUtils.clamp podemos limitar o movimento do personagem na tela estabelecendo limites no eixo X
+- clamp fará com que o valor de x fique sempre entre máximos e mínimos trazendo o valor dos limites caso o getX() seja maior ou menor que os limites
+```java
+private void logic() {
+    float worldWidth = viewport.getWorldWidth();
+    float worldHeight = viewport.getWorldHeight();
+
+    // Store the bucket size for brevity
+    float bucketWidth = bucketSprite.getWidth();
+    float bucketHeight = bucketSprite.getHeight();
+
+    // Subtract the bucket width
+    bucketSprite.setX(MathUtils.clamp(bucketSprite.getX(), 0, worldWidth - bucketWidth));
+}
+
+```
+## Lógica dos objetos
+- Um primeiro ponto para entendermos é que nossas gotas de chuva não serão somente um Sprite, pois serão renderizadas muitasao mesmo tempo
+- Elas serão um array de Sprites chamado `dropsSprites`, declarado e iniciado da seguinte maneira
+```java
+public class Main implements ApplicationListener {
+    ...
+    Array<Sprite> dropSprites;
+
+    public void create() {
+    ...
+
+        dropSprites = new Array<>();
+    }
+}
+```
+- como serão criados muitos sprites para as gotas, convém colocar um método a parte a criação desses sprites 
+- esse método insere no array `dropSprites` o novo sprite, que tem  tamanho(1,1), e posição (0,altura máxima)
+```java
+public void create() {
+    ...
+    dropSprites = new Array<>();
+
+    createDroplet();
+}
+...
+private void draw() {
+    ...
+}
+
+private void createDroplet() {
+    // create local variables for convenience
+    float dropWidth = 1;
+    float dropHeight = 1;
+    float worldWidth = viewport.getWorldWidth();
+    float worldHeight = viewport.getWorldHeight();
+    
+    // create the drop sprite
+    Sprite dropSprite = new Sprite(dropTexture);
+    dropSprite.setSize(dropWidth, dropHeight);
+    dropSprite.setX(0);
+    dropSprite.setY(worldHeight);
+    dropSprites.add(dropSprite); // Add it to the list
+}
+
+@Override
+public void pause() {
+
+}
+
+```
+- falta desenhar as goras em draw() e colocar sua lógica de movimento em logic(). Isso funciona com simples loops
+```java
+private void draw() {
+    ...
+    spriteBatch.begin();
+
+    ...
+
+    // draw each sprite
+    for (Sprite dropSprite : dropSprites) {
+        dropSprite.draw(spriteBatch);
+    }
+
+    spriteBatch.end();
+}
+
+private void logic() {
+    ...
+
+    // loop through each drop
+    float dropSpeed = -2f;
+    float delta = Gdx.graphics.getDeltaTime();
+
+    for (Sprite dropSprite : dropSprites) {
+        dropSprite.translateY(dropSpeed * delta);
+    }
+}
+
+```
+- Se rodarmos o projeto agora poderemos ver uma gota é renderizada uma única vez e cai na esquerda da tela
+- isso ocorre porque nosso `createDroplet()` está dentro do método create(), logo ele roda uma única vez no início do programa
+- além disso setamos a posiição horizontal em 0 manualmente no `createDroplet()`
+- primeiramente amos mover o `createDroplet()` para dentro do metodo `logic()` para ser acionado a cada quadro
+
+```java
+private void logic() {
+        float viewportWidth = viewport.getWorldWidth();
+        float viewportHeight = viewport.getWorldHeight();
+
+        float bucketWidth = bucketSprite.getWidth();
+        float bucketHeight = bucketSprite.getHeight();
+
+        bucketSprite.setX(MathUtils.clamp(bucketSprite.getX(), 0, viewportWidth - bucketWidth));
+
+        float dropSpeed = -2f;
+        float delta = Gdx.graphics.getDeltaTime();
+
+        for (Sprite dropSprite : dropSprites) {
+            dropSprite.translateY(dropSpeed * delta);
+        }
+
+        createDroplet();
+    }
+```
+- Vamos ver que a cada frame uma gota é gerada, produzindo assim muitíssimas gotas por segundo, e que elas cairão na esquerda da tela
+- vamos encapsular nosso `createDroplet()` em um condicional para que seja chamado apenas uma vez a cada segundo
+```java
+public class Main implements ApplicationListener {
+    ...
+    float dropTimer;
+
+
+private void logic() {
+    ...
+    dropTimer += delta;
+    if (dropTimer >= 1.5f) {
+        createDroplet();
+        dropTimer = 0f;
+    }
+}
+ 
+```
+- Agora, a cada 1,5 segundos uma nova gota será gerada na esquerda. vamos acertar a posição x de cada gota gerada para uma posição aleatória entre 0 e o tamanho da tela usando o método `MathUtils.random()`
+```java
+private void createDroplet() {
+    // create local variables for convenience
+    float dropWidth = 1f;
+    float dropHeight = 1f;
+    float worldWidth = viewport.getWorldWidth();
+    float worldHeight = viewport.getWorldHeight();
+
+    // create the drop sprite
+    Sprite dropSprite = new Sprite(dropTexture);
+    dropSprite.setSize(dropWidth, dropHeight);
+    dropSprite.setX(MathUtils.random(0f, worldWidth - dropWidth));
+    dropSprite.setY(worldHeight);
+    dropSprites.add(dropSprite); // Add it to the list
+} 
+```
+## Lidando com a memória
+- Se monitorarmos a memória de nosso jogo verificaremos que teremos um problema de increento de memória
+- Isso ocorre por não estarmos "destruindo" as gotas que foram criadas.
+- Em outras palavras, nosso array de gotas cresce sem parar. se colocarmos um `System.out.println(dropSprites.size);` do fim de `createDroplet()`poderemos ver isso no terminal
+- Vamos então criar uma lógica onde se uma gota atinge o fundo da tela ela é removida do array
+- fizemos um incremento em private void `logic()` para seja removido do array o elemento que sai da tela
+```java
+private void logic() {
+...
+float dropHeight = 1f;
+
+        for (Sprite dropSprite : dropSprites) {
+            dropSprite.translateY(dropSpeed * delta);
+            if (dropSprite.getY()< -dropHeight) {
+                dropSprites.removeValue(dropSprite, true);
+            }
+        }
+```
