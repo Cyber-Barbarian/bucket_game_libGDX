@@ -2,11 +2,14 @@ package com.badlogic.drop;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
@@ -20,6 +23,8 @@ public class Main implements ApplicationListener {
     Music music;
     SpriteBatch spriteBatch;
     FitViewport viewport;
+    Sprite bucketSprite;
+    Vector2 touchPos;
 
     @Override
     public void create() {
@@ -31,6 +36,9 @@ public class Main implements ApplicationListener {
         music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
         spriteBatch = new SpriteBatch();
         viewport = new FitViewport(8, 5); //8 unidades por 5 unidades
+        bucketSprite = new Sprite(bucketTexture);
+        bucketSprite.setSize(1,1);
+        touchPos = new Vector2();
     }
 
     @Override
@@ -48,6 +56,21 @@ public class Main implements ApplicationListener {
     }
 
     private void input() {
+        float speed = 4f;
+        float delta = Gdx.graphics.getDeltaTime();
+
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            bucketSprite.translateX(speed * delta);
+        } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            bucketSprite.translateX(-speed * delta);
+        }
+
+        if (Gdx.input.isTouched()) {
+            touchPos.set(Gdx.input.getX(), Gdx.input.getY());
+            viewport.unproject(touchPos);
+            bucketSprite.setCenterX(touchPos.x);
+        }
+
 
     }
 
@@ -65,7 +88,7 @@ public class Main implements ApplicationListener {
 
         //spriteBatch.draw(textura, posiçãox, posiçãoy, largura altura)
         spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
-        spriteBatch.draw(bucketTexture, 0,0,1,1);
+        bucketSprite.draw(spriteBatch);
 
         spriteBatch.end();
 

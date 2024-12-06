@@ -115,3 +115,98 @@ private void draw() {
  
 ```
 - Se rodarmos o projeto, veremos esses assets.
+
+# 4 - Sprites Controles
+## Sprites
+- Quando utilizamos texuras estamos lidando com imagens estáticas, que não guardam posição
+- Para implementar movimento, no lugar de textura devemos então usar `Sprite`  para nosso personagem
+```java
+public class Main implements ApplicationListener {
+    ...
+    Sprite bucketSprite; // Declare a new Sprite variable
+}
+@Override
+public void create() {
+    ...
+    bucketSprite = new Sprite(bucketTexture); // Initialize the sprite based on the texture
+    bucketSprite.setSize(1, 1); // Define the size of the sprite
+}
+
+```
+
+- Devemos também substituir a maneira como se "desenha" o Sprite. Sprites são desenhados de maneira diferente de textura
+```java
+private void draw() {
+    ScreenUtils.clear(Color.BLACK);
+    viewport.apply();
+    spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+    spriteBatch.begin();
+
+    float worldWidth = viewport.getWorldWidth();
+    float worldHeight = viewport.getWorldHeight();
+
+    spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
+    bucketSprite.draw(spriteBatch); // Sprites have their own draw method
+
+    spriteBatch.end();
+}
+
+```
+## Controle teclado
+- Como ainda não temos controles implementados, não veremos diferença ao rodar o projeto
+- Para implementar a movimentação via teclado, usaremos o método `input()`. 
+- Vamos pensar primeiramente em movimentação para a direita e para a esquerda.
+- criamos uma variável de movimento chamada `speed` para a velocidade e uma variável de delta chamada `delta` para o tempo, de forma a obter a mudança de posição por meio da multiplicação de ambas
+- Gdx.input.isKeyPressed verifica se a tecla está sendo pressionada
+- Gdx.graphics.getDeltaTime(), fornece o tempo decorrido desde o último quadro renderizado. Ao ser multiplicado por `speed`, temos uma nova posição do personagem
+```java
+private void input() {
+    float speed = 4f;
+    float delta = Gdx.graphics.getDeltaTime(); // retrieve the current delta
+
+    if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        bucketSprite.translateX(speed * delta); // move the bucket right
+    } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        bucketSprite.translateX(-speed * delta); // move the bucket left
+    }
+}
+
+```
+## Controle via mouse e touch
+- Controle via mous e via touch são correlatos. Ambos usam o método `isTouched()` para detectar se houve click ou algum toque na tela
+- para detectar a posição do toque precisamos criar um objeto do tipo `Vector2` para encapsular um vetor 2d com a posição do toque
+```java
+public class Main implements ApplicationListener {
+    ...
+    Vector2 touchPos;
+    ...
+    @Override
+    public void create() {
+    ...
+
+        touchPos = new Vector2();
+    }
+}
+
+```
+- com o Vector2 podemos saber onde ocorreu o toque e mover o personagem para a direita ou para a esquerda 
+- vamos captar somente a posição x do toque , que é o que nos interessa, da seguinte maneira
+```java
+private void input() {
+    float speed = 4f;
+    float delta = Gdx.graphics.getDeltaTime();
+
+    if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        bucketSprite.translateX(speed * delta);
+    } else if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        bucketSprite.translateX(-speed * delta);
+    }
+
+    if (Gdx.input.isTouched()) {
+        touchPos.set(Gdx.input.getX(), Gdx.input.getY()); //  Captamos a posição do toque
+        viewport.unproject(touchPos); // Convertemoos para unidades normalizadas na viewport
+        bucketSprite.setCenterX(touchPos.x); // mudamos o personagem horizontalmente
+    }
+}
+
+```
