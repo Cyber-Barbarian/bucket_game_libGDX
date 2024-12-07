@@ -1,5 +1,5 @@
 # 1 - Início do projeto 
-Crie um projeto no GDX-Liftoff com as seguintes configurações:
+Crie um  projeto no GDX-Liftoff com as seguintes configurações:
  - Nome do Projeto: bucket_game_libGDX
  - Pacote: com.badlogic.drop
  - Classe Principal: Main
@@ -389,3 +389,67 @@ float dropHeight = 1f;
             }
         }
 ```
+## Colisões e sons
+- Precisamos fazer a colisão entre as gotas e o personagem
+- Isso pode ser conseguido com a classe Rectangle. Precisamos de dois retângulos para fazer comparações. Um para o balde e outro para ser reaproveitado a cada gota.
+- Com o método overlap podemos usar a sobreposição entre gotas e balde 
+- Podemos também inserir a música em loop para ser reproduzida enquanto o jogo estiver rodando e inserir um som cada vez que uma gota cair no balde
+```java
+public class Main implements ApplicationListener {
+    ...
+    Rectangle bucketRectangle;
+    Rectangle dropRectangle;
+
+    ...
+
+    @Override
+    public void create() {
+    ...
+
+        bucketRectangle = new Rectangle();
+        dropRectangle = new Rectangle();
+        music.setLooping(true);
+        music.setVolume(.5f);
+        music.play();
+    }
+    ..
+    private void logic() {
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
+        float bucketWidth = bucketSprite.getWidth();
+        float bucketHeight = bucketSprite.getHeight();
+
+        bucketSprite.setX(MathUtils.clamp(bucketSprite.getX(), 0, worldWidth - bucketWidth));
+
+        float delta = Gdx.graphics.getDeltaTime();
+        // Apply the bucket position and size to the bucketRectangle
+        bucketRectangle.set(bucketSprite.getX(), bucketSprite.getY(), bucketWidth, bucketHeight);
+
+        for (int i = dropSprites.size - 1; i >= 0; i--) {
+            Sprite dropSprite = dropSprites.get(i);
+            float dropWidth = dropSprite.getWidth();
+            float dropHeight = dropSprite.getHeight();
+
+            dropSprite.translateY(-2f * delta);
+            // Apply the drop position and size to the dropRectangle
+            dropRectangle.set(dropSprite.getX(), dropSprite.getY(), dropWidth, dropHeight);
+
+            if (dropSprite.getY() < -dropHeight) dropSprites.removeIndex(i);
+            else if (bucketRectangle.overlaps(dropRectangle)) {
+                dropSprites.removeIndex(i);
+                dropSound.play(); // Play the sound
+            }
+        }
+
+        dropTimer += delta;
+        if (dropTimer > 1f) {
+            dropTimer = 0;
+            createDroplet();
+        }
+    }
+
+```
+## Fim da parte inicial
+- o código completo pode ser visto em [full_code_1  .md](full_code_1.md)
+- para fazer o deploy da aplicação podemos visitar https://libgdx.com/wiki/deployment/deploying-your-application
+
