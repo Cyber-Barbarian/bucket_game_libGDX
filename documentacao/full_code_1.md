@@ -1,3 +1,6 @@
+# Exemplo do código full, parte 1
+
+```java
 package com.badlogic.drop;
 
 import com.badlogic.gdx.ApplicationListener;
@@ -16,9 +19,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main implements ApplicationListener {
-
     Texture backgroundTexture;
     Texture bucketTexture;
     Texture dropTexture;
@@ -28,50 +29,38 @@ public class Main implements ApplicationListener {
     FitViewport viewport;
     Sprite bucketSprite;
     Vector2 touchPos;
-
     Array<Sprite> dropSprites;
-
     float dropTimer;
-
     Rectangle bucketRectangle;
     Rectangle dropRectangle;
 
-    int points;
-
-
     @Override
     public void create() {
-        // Prepare your application here.
         backgroundTexture = new Texture("background.png");
         bucketTexture = new Texture("bucket.png");
         dropTexture = new Texture("drop.png");
         dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.mp3"));
         music = Gdx.audio.newMusic(Gdx.files.internal("music.mp3"));
         spriteBatch = new SpriteBatch();
-        viewport = new FitViewport(8, 5); //8 unidades por 5 unidades
+        viewport = new FitViewport(8, 5);
         bucketSprite = new Sprite(bucketTexture);
-        bucketSprite.setSize(1,1);
+        bucketSprite.setSize(1, 1);
         touchPos = new Vector2();
-
-        dropSprites = new Array<Sprite>();
+        dropSprites = new Array<>();
         bucketRectangle = new Rectangle();
         dropRectangle = new Rectangle();
-
         music.setLooping(true);
         music.setVolume(.5f);
         music.play();
-
     }
 
     @Override
     public void resize(int width, int height) {
-        // Resize your application here. The parameters represent the new window size.
         viewport.update(width, height, true);
     }
 
     @Override
     public void render() {
-        // Draw your application here.
         input();
         logic();
         draw();
@@ -92,57 +81,50 @@ public class Main implements ApplicationListener {
             viewport.unproject(touchPos);
             bucketSprite.setCenterX(touchPos.x);
         }
-
-
     }
 
     private void logic() {
-        float viewportWidth = viewport.getWorldWidth();
-        float viewportHeight = viewport.getWorldHeight();
-
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
         float bucketWidth = bucketSprite.getWidth();
         float bucketHeight = bucketSprite.getHeight();
 
-        bucketSprite.setX(MathUtils.clamp(bucketSprite.getX(), 0, viewportWidth - bucketWidth));
+        bucketSprite.setX(MathUtils.clamp(bucketSprite.getX(), 0, worldWidth - bucketWidth));
+
+        float delta = Gdx.graphics.getDeltaTime();
         bucketRectangle.set(bucketSprite.getX(), bucketSprite.getY(), bucketWidth, bucketHeight);
 
-        float dropSpeed = -2f;
-        float delta = Gdx.graphics.getDeltaTime();
+        for (int i = dropSprites.size - 1; i >= 0; i--) {
+            Sprite dropSprite = dropSprites.get(i);
+            float dropWidth = dropSprite.getWidth();
+            float dropHeight = dropSprite.getHeight();
 
-        float dropHeight = 1f;
+            dropSprite.translateY(-2f * delta);
+            dropRectangle.set(dropSprite.getX(), dropSprite.getY(), dropWidth, dropHeight);
 
-        for (Sprite dropSprite : dropSprites) {
-            dropSprite.translateY(dropSpeed * delta);
-            dropRectangle.set(dropSprite.getX(), dropSprite.getY(), dropSprite.getWidth(), dropSprite.getHeight());
-            if (dropRectangle.overlaps(bucketRectangle)) {
-                dropSprites.removeValue(dropSprite,true);
-                points++;
-                System.out.println("Pontuação atual: " + points);
+            if (dropSprite.getY() < -dropHeight) dropSprites.removeIndex(i);
+            else if (bucketRectangle.overlaps(dropRectangle)) {
+                dropSprites.removeIndex(i);
                 dropSound.play();
-            }
-            if (dropSprite.getY()< -dropHeight) {
-                dropSprites.removeValue(dropSprite, true);
             }
         }
 
         dropTimer += delta;
-        if (dropTimer >= 1.5f) {
-            dropTimer = 0f;
+        if (dropTimer > 1f) {
+            dropTimer = 0;
             createDroplet();
-
         }
-
     }
 
     private void draw() {
-        ScreenUtils.clear(Color.BLUE);
+        ScreenUtils.clear(Color.BLACK);
         viewport.apply();
         spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
         spriteBatch.begin();
+
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
 
-        //spriteBatch.draw(textura, posiçãox, posiçãoy, largura altura)
         spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
         bucketSprite.draw(spriteBatch);
 
@@ -151,37 +133,35 @@ public class Main implements ApplicationListener {
         }
 
         spriteBatch.end();
-
     }
 
     private void createDroplet() {
-        // create local variables for convenience
-        float dropWidth = 1f;
-        float dropHeight = 1f;
+        float dropWidth = 1;
+        float dropHeight = 1;
         float worldWidth = viewport.getWorldWidth();
         float worldHeight = viewport.getWorldHeight();
 
-        // create the drop sprite
         Sprite dropSprite = new Sprite(dropTexture);
         dropSprite.setSize(dropWidth, dropHeight);
         dropSprite.setX(MathUtils.random(0f, worldWidth - dropWidth));
         dropSprite.setY(worldHeight);
-        dropSprites.add(dropSprite); // Add it to the list
-        //System.out.println(dropSprites.size);
+        dropSprites.add(dropSprite);
     }
 
     @Override
     public void pause() {
-        // Invoked when your application is paused.
+        
     }
 
     @Override
     public void resume() {
-        // Invoked when your application is resumed after pause.
+        
     }
 
     @Override
     public void dispose() {
-        // Destroy application's resources here.
+        
     }
 }
+
+```
